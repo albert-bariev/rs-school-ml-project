@@ -1,13 +1,24 @@
 [tool.poetry]
-name = "rs-school-ml-project"
+name = "rs_ml_project"
 version = "0.1.0"
-description = ""
+description = "Homework 9"
 authors = ["albert-bariev"]
+
+[tool.poetry.scripts]
+train = "rs_ml_project.train:train"
 
 [tool.poetry.dependencies]
 python = "^3.8"
+click = "^8.0.3"
+pandas = "^1.3.4"
+sklearn = "^0.0"
+scikit-learn = "^1.0.1"
+mlflow = "^1.22.0"
 
 [tool.poetry.dev-dependencies]
+black = "^21.11b1"
+mypy = "^0.910"
+pytest = "^6.2.5"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
