@@ -2,14 +2,12 @@ import argparse
 from joblib import dump, load
 
 import mlflow
-import mlflow.sklearn
 
 import pandas as pd
 from .pipeline import create_pipeline
 from sklearn.model_selection import train_test_split, cross_validate, GridSearchCV, RandomizedSearchCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 parser = argparse.ArgumentParser()
 
@@ -27,12 +25,12 @@ parser.add_argument(
     help='path to save the model'
 )
 
-parser.add_argument(
-    '-t', '--test-split-ratio',
-    default=0.2,
-    type=float,
-    help='test split ratio'
-)
+# parser.add_argument(
+#     '-t', '--test-split-ratio',
+#     default=0.2,
+#     type=float,
+#     help='test split ratio'
+# )
 
 parser.add_argument(
     '-rs', '--random-state',
@@ -43,17 +41,33 @@ parser.add_argument(
 
 parser.add_argument(
     '-sc', '--scaler',
+    default=None,
     type=str,
     choices=['minmax', 'std'],
     help='scaler'
 )
 
-# parser.add_argument(
-#     '-fs', '--selector',
-#     type=str,
-#     choices=['rf'],
-#     help='feature selector'
-# )
+parser.add_argument(
+    '-dr', '--dim-reduced',
+    default=None,
+    type=int,
+    help='Reduced dimensions'
+)
+
+parser.add_argument(
+    '-cv', '--cross-validation',
+    default=5,
+    type=int,
+    help='Number of CV folds'
+)
+
+parser.add_argument(
+    '-fs', '--feature-selector',
+    default=None,
+    type=str,
+    choices=['rf'],
+    help='feature selector'
+)
 
 parser.add_argument(
     '-m', '--model',
@@ -109,9 +123,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 df = pd.read_csv(args.dataset)
-X_train, X_test, y_train, y_test = train_test_split(df.drop(columns='Cover_Type'), df['Cover_Type'],
-                                                    test_size=args.test_split_ratio, random_state=args.random_state)
-
+X, y = df.drop(columns='Cover_Type'), df['Cover_Type']
 
 def train():
     with mlflow.start_run():
@@ -123,13 +135,13 @@ def train():
                                            max_depth=args.max_depth,
                                            max_features=max_features, bootstrap=args.bootstrap,
                                            random_state=args.random_state)
-        pipeline = create_pipeline(model, args.scaler)
-        pipeline.fit(X_train, y_train)
+        pipeline = create_pipeline(model, args.scaler, args.dim_reduced, args.feature_selector)
+        pipeline.fit(X, y)
         dump(pipeline, args.save_model_path)
         print(f"Model is saved to {args.save_model_path}.")
 
         scoring = ['accuracy', 'precision_weighted', 'recall_weighted', 'f1_weighted']
-        scores = cross_validate(pipeline, X_train, y_train, cv=5, scoring=scoring)
+        scores = cross_validate(pipeline, X, y, cv=args.cross_validation, scoring=scoring)
         accuracy = scores['test_accuracy'].mean()
         precision = scores['test_precision_weighted'].mean()
         recall = scores['test_recall_weighted'].mean()
