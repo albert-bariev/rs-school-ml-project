@@ -119,7 +119,7 @@ def train():
             model = KNeighborsClassifier(n_neighbors=args.n, weights=args.weights)
         else:
             max_features = args.max_features if args.max_features else 'auto'
-            model = RandomForestClassifier(criterion=args.criterion, n_estimators=args.n_estimators,
+            model = RandomForestClassifier(n_estimators=args.n, criterion=args.criterion,
                                            max_depth=args.max_depth,
                                            max_features=max_features, bootstrap=args.bootstrap,
                                            random_state=args.random_state)
@@ -130,9 +130,19 @@ def train():
         precision = precision_score(y_test, y_pred, average='weighted')
         recall = recall_score(y_test, y_pred, average='weighted')
         f1 = f1_score(y_test, y_pred, average='weighted')
-        # mlflow.log_param("use_scaler", use_scaler)
-        # mlflow.log_param("max_iter", max_iter)
-        # mlflow.log_param("logreg_c", logreg_c)
+        mlflow.log_param("model", args.model)
+        mlflow.log_param("scaler", args.scaler)
+        if args.model == 'knn':
+            mlflow.log_param('n_neighbors', args.n)
+            mlflow.log_param('weights', args.weights)
+        else:
+            mlflow.log_param('n_estimators', args.n)
+            mlflow.log_param('criterion', args.criterion)
+            mlflow.log_param('max_depth', args.max_depth)
+            mlflow.log_param('max_features', max_features)
+            mlflow.log_param('bootstrap', args.bootstrap)
+            mlflow.log_param('random_state', args.random_state)
+
         mlflow.log_metric("accuracy", accuracy)
         mlflow.log_metric("precision", precision)
         mlflow.log_metric("recall", recall)
