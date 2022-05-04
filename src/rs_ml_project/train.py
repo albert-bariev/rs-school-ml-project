@@ -146,13 +146,6 @@ def train():
         dump(pipeline, args.save_model_path)
         print(f"Model is saved to {args.save_model_path}.")
 
-        scoring = ['accuracy', 'precision_weighted', 'recall_weighted', 'f1_weighted']
-        scores = cross_validate(pipeline, X, y, cv=args.cross_validation, scoring=scoring)
-        accuracy = scores['test_accuracy'].mean()
-        precision = scores['test_precision_weighted'].mean()
-        recall = scores['test_recall_weighted'].mean()
-        f1 = scores['test_f1_weighted'].mean()
-
         mlflow.log_param("model", args.model)
         mlflow.log_param("scaler", args.scaler)
         mlflow.log_param("random state", args.random_state)
@@ -170,6 +163,14 @@ def train():
             mlflow.log_param('max_depth', args.max_depth)
             mlflow.log_param('max_features', max_features)
             mlflow.log_param('bootstrap', args.bootstrap)
+
+        scoring = ['accuracy', 'precision_weighted', 'recall_weighted', 'f1_weighted']
+        scores = cross_validate(pipeline, X, y, cv=args.cross_validation, scoring=scoring)
+        accuracy = scores['test_accuracy'].mean()
+        precision = scores['test_precision_weighted'].mean()
+        recall = scores['test_recall_weighted'].mean()
+        f1 = scores['test_f1_weighted'].mean()
+
         mlflow.log_metric("accuracy", accuracy)
         mlflow.log_metric("precision", precision)
         mlflow.log_metric("recall", recall)
