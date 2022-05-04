@@ -9,7 +9,7 @@ from .pipeline import create_pipeline
 from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 parser = argparse.ArgumentParser()
 
@@ -80,6 +80,7 @@ parser.add_argument(
 parser.add_argument(
     '-mf', '--max-features',
     default='auto',
+    # type=int,  # TODO решить конфликт типов
     help='''
     The number of features to consider when looking for the best split:
     If int, then consider max_features features at each split.
@@ -114,12 +115,19 @@ def train():
                                        random_state=args.random_state)
         pipeline = create_pipeline(model, args.scaler)
         pipeline.fit(X_train, y_train)
-        accuracy = accuracy_score(y_test, pipeline.predict(X_test))
+        y_pred = pipeline.predict(X_test)
+        accuracy = accuracy_score(y_test, y_pred)  # TODO добавить CV
+        precision = precision_score(y_test, y_pred, average='weighted')
+        recall = recall_score(y_test, y_pred, average='weighted')
+        f1 = f1_score(y_test, y_pred, average='weighted')
         # mlflow.log_param("use_scaler", use_scaler)
         # mlflow.log_param("max_iter", max_iter)
         # mlflow.log_param("logreg_c", logreg_c)
         mlflow.log_metric("accuracy", accuracy)
         print(f"Accuracy: {accuracy}.")
+        print(f"Precision: {precision}.")
+        print(f"Recall: {recall}.")
+        print(f"F1-score: {f1}.")
         dump(pipeline, args.save_model_path)
         print(f"Model is saved to {args.save_model_path}.")
     return
