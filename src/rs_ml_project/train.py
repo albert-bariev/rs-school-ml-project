@@ -6,7 +6,7 @@ import mlflow.sklearn
 
 import pandas as pd
 from .pipeline import create_pipeline
-from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV
+from sklearn.model_selection import train_test_split, cross_validate, GridSearchCV, RandomizedSearchCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
@@ -125,11 +125,16 @@ def train():
                                            random_state=args.random_state)
         pipeline = create_pipeline(model, args.scaler)
         pipeline.fit(X_train, y_train)
-        y_pred = pipeline.predict(X_test)
-        accuracy = accuracy_score(y_test, y_pred)  # TODO добавить CV
-        precision = precision_score(y_test, y_pred, average='weighted')
-        recall = recall_score(y_test, y_pred, average='weighted')
-        f1 = f1_score(y_test, y_pred, average='weighted')
+        dump(pipeline, args.save_model_path)
+        print(f"Model is saved to {args.save_model_path}.")
+
+        scoring = ['accuracy', 'precision_weighted', 'recall_weighted', 'f1_weighted']
+        scores = cross_validate(pipeline, X_train, y_train, cv=5, scoring=scoring)
+        accuracy = scores['test_accuracy'].mean()
+        precision = scores['test_precision_weighted'].mean()
+        recall = scores['test_recall_weighted'].mean()
+        f1 = scores['test_f1_weighted'].mean()
+
         mlflow.log_param("model", args.model)
         mlflow.log_param("scaler", args.scaler)
         if args.model == 'knn':
@@ -142,15 +147,13 @@ def train():
             mlflow.log_param('max_features', max_features)
             mlflow.log_param('bootstrap', args.bootstrap)
             mlflow.log_param('random_state', args.random_state)
-
         mlflow.log_metric("accuracy", accuracy)
         mlflow.log_metric("precision", precision)
         mlflow.log_metric("recall", recall)
         mlflow.log_metric("f1_score", f1)
+
         print(f"Accuracy: {accuracy}.")
         print(f"Precision: {precision}.")
         print(f"Recall: {recall}.")
         print(f"F1-score: {f1}.")
-        dump(pipeline, args.save_model_path)
-        print(f"Model is saved to {args.save_model_path}.")
     return
