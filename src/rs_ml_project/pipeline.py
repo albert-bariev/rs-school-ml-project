@@ -1,12 +1,12 @@
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
-from sklearn.feature_selection import VarianceThreshold, SelectFromModel, RFECV, SequentialFeatureSelector
+from sklearn.feature_selection import SelectFromModel, SelectKBest
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.decomposition import PCA
-from sklearn.manifold import TSNE
+from boruta import BorutaPy
 
 
-def create_pipeline(classifier, scaler, dim_reduced, feature_selector):
+def create_pipeline(classifier, scaler, dim_reduced, feature_selector, kbest):
     steps = []
     if scaler == 'minmax':
         steps.append(('scaler', MinMaxScaler()))
@@ -16,8 +16,10 @@ def create_pipeline(classifier, scaler, dim_reduced, feature_selector):
     if dim_reduced:
         steps.append(('dimensionality reduction', PCA(n_components=dim_reduced)))
 
-    if feature_selector == 'rf':    #TODO добавить разные селекторы
+    if feature_selector == 'rf':
         steps.append(('feature selector', SelectFromModel(RandomForestClassifier())))
+    elif feature_selector == 'kbest':
+        steps.append(('feature selector', SelectKBest(k=kbest)))
 
     steps.append(('model', classifier))
 

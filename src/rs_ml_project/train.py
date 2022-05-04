@@ -25,12 +25,11 @@ parser.add_argument(
     help='path to save the model'
 )
 
-# parser.add_argument(
-#     '-t', '--test-split-ratio',
-#     default=0.2,
-#     type=float,
-#     help='test split ratio'
-# )
+parser.add_argument(
+    '--target',
+    type=str,
+    help='Target column name'
+)
 
 parser.add_argument(
     '-rs', '--random-state',
@@ -65,8 +64,15 @@ parser.add_argument(
     '-fs', '--feature-selector',
     default=None,
     type=str,
-    choices=['rf'],
+    choices=['rf', 'kbest'],
     help='feature selector'
+)
+
+parser.add_argument(
+    '--kbest',
+    default=None,
+    type=int,
+    help='k for KBest selector'
 )
 
 parser.add_argument(
@@ -123,7 +129,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 df = pd.read_csv(args.dataset)
-X, y = df.drop(columns='Cover_Type'), df['Cover_Type']
+X, y = df.drop(columns=args.target), df[args.target]
 
 def train():
     with mlflow.start_run():
@@ -135,7 +141,7 @@ def train():
                                            max_depth=args.max_depth,
                                            max_features=max_features, bootstrap=args.bootstrap,
                                            random_state=args.random_state)
-        pipeline = create_pipeline(model, args.scaler, args.dim_reduced, args.feature_selector)
+        pipeline = create_pipeline(model, args.scaler, args.dim_reduced, args.feature_selector, args.kbest)
         pipeline.fit(X, y)
         dump(pipeline, args.save_model_path)
         print(f"Model is saved to {args.save_model_path}.")
@@ -149,6 +155,12 @@ def train():
 
         mlflow.log_param("model", args.model)
         mlflow.log_param("scaler", args.scaler)
+        mlflow.log_param("random state", args.random_state)
+        mlflow.log_param("dim-reduced", args.dim_reduced)
+        mlflow.log_param("cross-validation", args.cross_validation)
+        mlflow.log_param("feature-selector", args.feature_selector)
+        mlflow.log_param("kbest", args.kbest)
+
         if args.model == 'knn':
             mlflow.log_param('n_neighbors', args.n)
             mlflow.log_param('weights', args.weights)
@@ -158,7 +170,6 @@ def train():
             mlflow.log_param('max_depth', args.max_depth)
             mlflow.log_param('max_features', max_features)
             mlflow.log_param('bootstrap', args.bootstrap)
-            mlflow.log_param('random_state', args.random_state)
         mlflow.log_metric("accuracy", accuracy)
         mlflow.log_metric("precision", precision)
         mlflow.log_metric("recall", recall)
