@@ -8,7 +8,7 @@ import pandas as pd
 from .pipeline import create_pipeline
 from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 parser = argparse.ArgumentParser()
@@ -56,18 +56,26 @@ parser.add_argument(
 # )
 
 parser.add_argument(
+    '-m', '--model',
+    default='rf',
+    type=str,
+    choices=['rf', 'knn'],
+    help='model to fit'
+)
+
+parser.add_argument(
+    '-n',
+    default=100,
+    type=int,
+    help='Number of estimators for Random Forest / Number of neighbours for KNN'
+)
+
+parser.add_argument(
     '-cr', '--criterion',
     default='gini',
     type=str,
     choices=['gini', 'entropy'],
     help='decision criterion for the tree'
-)
-
-parser.add_argument(
-    '-n', '--n-estimators',
-    default=100,
-    type=int,
-    help='The number of trees in the forest.'
 )
 
 parser.add_argument(
@@ -79,18 +87,8 @@ parser.add_argument(
 
 parser.add_argument(
     '-mf', '--max-features',
-    default='auto',
-    # type=int,  # TODO решить конфликт типов
-    help='''
-    The number of features to consider when looking for the best split:
-    If int, then consider max_features features at each split.
-    If float, then max_features is a fraction and round(max_features * n_features) features are considered at each split.
-    If “auto”, then max_features=sqrt(n_features).
-    If “sqrt”, then max_features=sqrt(n_features) (same as “auto”).
-    If “log2”, then max_features=log2(n_features).
-    If None, then max_features=n_features.
-    Note: the search for a split does not stop until at least one valid partition of the node samples is found, even if it requires to effectively inspect more than max_features features.
-    '''
+    type=int,
+    help='The number of features to consider when looking for the best split'
 )
 
 parser.add_argument(
@@ -98,6 +96,14 @@ parser.add_argument(
     default=True,
     type=bool,
     help='Whether bootstrap samples are used when building trees. If False, the whole dataset is used to build each tree.'
+)
+
+parser.add_argument(
+    '-w', '--weights',
+    default='distance',
+    type=str,
+    choices=['uniform', 'distance'],
+    help='Weight function used in KNN prediction'
 )
 
 args = parser.parse_args()
@@ -109,10 +115,14 @@ X_train, X_test, y_train, y_test = train_test_split(df.drop(columns='Cover_Type'
 
 def train():
     with mlflow.start_run():
-        model = RandomForestClassifier(criterion=args.criterion, n_estimators=args.n_estimators,
-                                       max_depth=args.max_depth,
-                                       max_features=args.max_features, bootstrap=args.bootstrap,
-                                       random_state=args.random_state)
+        if args.model == 'knn':
+            model = KNeighborsClassifier(n_neighbors=args.n, weights=args.weights)
+        else:
+            max_features = args.max_features if args.max_features else 'auto'
+            model = RandomForestClassifier(criterion=args.criterion, n_estimators=args.n_estimators,
+                                           max_depth=args.max_depth,
+                                           max_features=max_features, bootstrap=args.bootstrap,
+                                           random_state=args.random_state)
         pipeline = create_pipeline(model, args.scaler)
         pipeline.fit(X_train, y_train)
         y_pred = pipeline.predict(X_test)
@@ -124,6 +134,9 @@ def train():
         # mlflow.log_param("max_iter", max_iter)
         # mlflow.log_param("logreg_c", logreg_c)
         mlflow.log_metric("accuracy", accuracy)
+        mlflow.log_metric("precision", precision)
+        mlflow.log_metric("recall", recall)
+        mlflow.log_metric("f1_score", f1)
         print(f"Accuracy: {accuracy}.")
         print(f"Precision: {precision}.")
         print(f"Recall: {recall}.")
