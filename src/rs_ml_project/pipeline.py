@@ -3,7 +3,6 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.feature_selection import SelectFromModel, SelectKBest
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.decomposition import PCA
-from boruta import BorutaPy
 
 
 def create_pipeline(classifier, scaler, dim_reduced, feature_selector, kbest):

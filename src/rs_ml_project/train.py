@@ -1,13 +1,7 @@
 import argparse
-from joblib import dump, load
-
 import mlflow
+from .model import nested_cv, kfold_cv
 
-import pandas as pd
-from .pipeline import create_pipeline
-from sklearn.model_selection import train_test_split, cross_validate, GridSearchCV, RandomizedSearchCV
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.neighbors import KNeighborsClassifier
 
 parser = argparse.ArgumentParser()
 
@@ -39,6 +33,36 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    '-m', '--model',
+    default='rf',
+    type=str,
+    choices=['rf', 'knn'],
+    help='model to fit'
+)
+
+parser.add_argument(
+    '-ncv', '--nested-cv',
+    default=False,
+    type=bool,
+    help='If True: use automatic hyperparameter optimization via nested cv + grid search'
+)
+
+parser.add_argument(
+    '-cvo', '--cross-validation-outer',
+    default=5,
+    type=int,
+    help='Number of CV folds in outer loop'
+)
+
+parser.add_argument(
+    '-cvi', '--cross-validation-inner',
+    default=None,
+    type=int,
+    help='Number of CV folds in inner loop'
+)
+
+# параметры для подготовки фичей
+parser.add_argument(
     '-sc', '--scaler',
     default=None,
     type=str,
@@ -51,13 +75,6 @@ parser.add_argument(
     default=None,
     type=int,
     help='Reduced dimensions'
-)
-
-parser.add_argument(
-    '-cv', '--cross-validation',
-    default=5,
-    type=int,
-    help='Number of CV folds'
 )
 
 parser.add_argument(
@@ -75,24 +92,17 @@ parser.add_argument(
     help='k for KBest selector'
 )
 
-parser.add_argument(
-    '-m', '--model',
-    default='rf',
-    type=str,
-    choices=['rf', 'knn'],
-    help='model to fit'
-)
-
+# параметры для спецификации модели
 parser.add_argument(
     '-n',
-    default=100,
+    default=None,
     type=int,
     help='Number of estimators for Random Forest / Number of neighbours for KNN'
 )
 
 parser.add_argument(
     '-cr', '--criterion',
-    default='gini',
+    default=None,
     type=str,
     choices=['gini', 'entropy'],
     help='decision criterion for the tree'
@@ -107,20 +117,21 @@ parser.add_argument(
 
 parser.add_argument(
     '-mf', '--max-features',
-    type=int,
-    help='The number of features to consider when looking for the best split'
+    default=None,
+    type=float,
+    help='Fraction of features to consider when looking for the best split'
 )
 
 parser.add_argument(
     '-bt', '--bootstrap',
-    default=True,
+    default=None,
     type=bool,
     help='Whether bootstrap samples are used when building trees. If False, the whole dataset is used to build each tree.'
 )
 
 parser.add_argument(
     '-w', '--weights',
-    default='distance',
+    default=None,
     type=str,
     choices=['uniform', 'distance'],
     help='Weight function used in KNN prediction'
@@ -128,56 +139,11 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-df = pd.read_csv(args.dataset)
-X, y = df.drop(columns=args.target), df[args.target]
 
 def train():
     with mlflow.start_run():
-        if args.model == 'knn':
-            model = KNeighborsClassifier(n_neighbors=args.n, weights=args.weights)
+        if args.nested_cv:
+            nested_cv(args)
         else:
-            max_features = args.max_features if args.max_features else 'auto'
-            model = RandomForestClassifier(n_estimators=args.n, criterion=args.criterion,
-                                           max_depth=args.max_depth,
-                                           max_features=max_features, bootstrap=args.bootstrap,
-                                           random_state=args.random_state)
-        pipeline = create_pipeline(model, args.scaler, args.dim_reduced, args.feature_selector, args.kbest)
-        pipeline.fit(X, y)
-        dump(pipeline, args.save_model_path)
-        print(f"Model is saved to {args.save_model_path}.")
-
-        mlflow.log_param("model", args.model)
-        mlflow.log_param("scaler", args.scaler)
-        mlflow.log_param("random state", args.random_state)
-        mlflow.log_param("dim-reduced", args.dim_reduced)
-        mlflow.log_param("cross-validation", args.cross_validation)
-        mlflow.log_param("feature-selector", args.feature_selector)
-        mlflow.log_param("kbest", args.kbest)
-
-        if args.model == 'knn':
-            mlflow.log_param('n_neighbors', args.n)
-            mlflow.log_param('weights', args.weights)
-        else:
-            mlflow.log_param('n_estimators', args.n)
-            mlflow.log_param('criterion', args.criterion)
-            mlflow.log_param('max_depth', args.max_depth)
-            mlflow.log_param('max_features', max_features)
-            mlflow.log_param('bootstrap', args.bootstrap)
-
-        scoring = ['accuracy', 'precision_weighted', 'recall_weighted', 'f1_weighted']
-        scores = cross_validate(pipeline, X, y, cv=args.cross_validation, scoring=scoring)
-        accuracy = scores['test_accuracy'].mean()
-        precision = scores['test_precision_weighted'].mean()
-        recall = scores['test_recall_weighted'].mean()
-        f1 = scores['test_f1_weighted'].mean()
-
-        mlflow.log_metric("accuracy", accuracy)
-        mlflow.log_metric("precision", precision)
-        mlflow.log_metric("recall", recall)
-        mlflow.log_metric("f1_score", f1)
-
-        print(f"Accuracy: {accuracy}.")
-        print(f"Precision: {precision}.")
-        print(f"Recall: {recall}.")
-        print(f"F1-score: {f1}.")
+            kfold_cv(args)
     return
