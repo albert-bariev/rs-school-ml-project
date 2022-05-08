@@ -11,15 +11,15 @@ poetry install --no-dev
 ```
 4. Запустить обучение модели следующей командой (если выполнен пункт 1, то пути можно не указывать). 
 ```sh
-poetry poetry run train -d <path to csv with data> -s <path to save trained model>
+poetry run train -d <path to csv with data> -s <path to save trained model>
 ```
 Для спецификации модели можно передать параметры. Доступные параметры можно увидеть, выполнив следующую команду:
 ```sh
-poetry poetry run train --help
+poetry run train --help
 ```
 5. Чтобы увидеть параметры и метрики всех запущенных ранее моделей, выполните эту команду (откроется интерфейс в браузере):
 ```sh
-poetry poetry run mlflow ui
+poetry run mlflow ui
 ```
 
 ## Для разработчиков
