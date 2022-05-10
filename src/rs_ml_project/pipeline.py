@@ -2,10 +2,16 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.feature_selection import SelectFromModel, SelectKBest
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.decomposition import PCA
+from typing import Union
 
 
-def create_pipeline(classifier, scaler, dim_reduced, feature_selector, kbest):
+def create_pipeline(classifier: Union[RandomForestClassifier, KNeighborsClassifier],
+                    scaler: str,
+                    dim_reduced: int,
+                    feature_selector: str,
+                    kbest: int) -> Pipeline:
     steps = []
     if scaler == "minmax":
         steps.append(("scaler", MinMaxScaler()))

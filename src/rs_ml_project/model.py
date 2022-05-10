@@ -7,14 +7,17 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from .pipeline import create_pipeline
+from typing import List, Tuple, Any
+import numpy.typing as npt
+import argparse
 
 
-def get_data(args):
+def get_data(args: argparse.Namespace) -> Tuple[npt.NDArray[Any], npt.NDArray[Any]]:
     df = pd.read_csv(args.dataset)
     return df.drop(columns=args.target).to_numpy(), df[args.target]
 
 
-def kfold_cv(args):
+def kfold_cv(args: argparse.Namespace) -> None:
     X, y = get_data(args)
     params, metrics = {}, {}
     if args.model == "knn":
@@ -69,7 +72,7 @@ def kfold_cv(args):
     return
 
 
-def nested_cv(args):
+def nested_cv(args: argparse.Namespace) -> None:
     X, y = get_data(args)
     space = {
         "knn": {
@@ -100,7 +103,10 @@ def nested_cv(args):
     cv_outer = KFold(
         n_splits=params["1_cv_outer"], shuffle=True, random_state=params["random_state"]
     )
-    accuracy_lst, precision_lst, recall_lst, f1_lst = [], [], [], []
+    accuracy_lst: List[float] = []
+    precision_lst: List[float] = []
+    recall_lst: List[float] = []
+    f1_lst: List[float] = []
     for train_ix, test_ix in cv_outer.split(X):
         X_train, X_test = X[train_ix, :], X[test_ix, :]
         y_train, y_test = y[train_ix], y[test_ix]

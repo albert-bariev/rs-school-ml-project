@@ -2,7 +2,8 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 * Проведенные эксперименты с гиперпараметрами ![картинка](experiments.png)
-* применение black + flake8 ![img.png](formatting.png)
+* Применение black + flake8 ![img.png](formatting.png)
+* Аннотация типов ![img.png](typing.png)
 
 ## Для пользователяей
 0. Склонировать репозиторий

@@ -119,7 +119,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 
-def train():
+def train() -> None:
     with mlflow.start_run():
         if args.nested_cv:
             nested_cv(args)
