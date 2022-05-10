@@ -103,7 +103,8 @@ parser.add_argument(
     "--bootstrap",
     default=None,
     type=bool,
-    help="Whether bootstrap samples are used when building trees. If False, the whole dataset is used to build each tree.",
+    help="""Whether bootstrap samples are used when building trees.
+    If False, the whole dataset is used to build each tree.""",
 )
 
 parser.add_argument(
