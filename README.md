@@ -4,6 +4,7 @@
 * Проведенные эксперименты с гиперпараметрами ![картинка](experiments.png)
 * Применение black + flake8 ![img.png](formatting.png)
 * Аннотация типов ![img.png](typing.png)
+* nox ![nox](nox.png)
 
 ## Для пользователяей
 0. Склонировать репозиторий

@@ -7,11 +7,13 @@ from sklearn.decomposition import PCA
 from typing import Union
 
 
-def create_pipeline(classifier: Union[RandomForestClassifier, KNeighborsClassifier],
-                    scaler: str,
-                    dim_reduced: int,
-                    feature_selector: str,
-                    kbest: int) -> Pipeline:
+def create_pipeline(
+    classifier: Union[RandomForestClassifier, KNeighborsClassifier],
+    scaler: str,
+    dim_reduced: int,
+    feature_selector: str,
+    kbest: int,
+) -> Pipeline:
     steps = []
     if scaler == "minmax":
         steps.append(("scaler", MinMaxScaler()))
