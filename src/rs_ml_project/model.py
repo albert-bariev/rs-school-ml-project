@@ -42,14 +42,10 @@ def kfold_cv(args: argparse.Namespace) -> None:
     params["2_feature_selector"] = args.feature_selector
     params["2_kbest"] = args.kbest
 
-    mlflow.log_params(params)
-
     pipeline = create_pipeline(
         model, args.scaler, args.dim_reduced, args.feature_selector, args.kbest
     )
     pipeline.fit(X, y)
-    dump(pipeline, args.save_model_path)
-    print(f"Model is saved to {args.save_model_path}.")
 
     scoring = ["accuracy", "precision_weighted", "recall_weighted", "f1_weighted"]
     scores = cross_validate(
@@ -67,7 +63,12 @@ def kfold_cv(args: argparse.Namespace) -> None:
     metrics["precision"] = scores["test_precision_weighted"].mean()
     metrics["recall"] = scores["test_recall_weighted"].mean()
     metrics["f1_score"] = scores["test_f1_weighted"].mean()
-    mlflow.log_metrics(metrics)
+
+    if not args.test:
+        dump(pipeline, args.save_model_path)
+        print(f"Model is saved to {args.save_model_path}.")
+        mlflow.log_params(params)
+        mlflow.log_metrics(metrics)
     print(metrics)
     return
 
@@ -152,12 +153,15 @@ def nested_cv(args: argparse.Namespace) -> None:
         p = key[7:]
         params[p] = value
 
-    mlflow.log_params(params)
+
 
     metrics["accuracy"] = np.mean(accuracy_lst)
     metrics["precision"] = np.mean(precision_lst)
     metrics["recall"] = np.mean(recall_lst)
     metrics["f1_score"] = np.mean(f1_lst)
-    mlflow.log_metrics(metrics)
+
+    if not args.test:
+        mlflow.log_params(params)
+        mlflow.log_metrics(metrics)
     print(metrics)
     return

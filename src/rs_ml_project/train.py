@@ -137,9 +137,23 @@ def train(argv: Optional[List[str]] = None) -> None:
         help="Weight function used in KNN prediction",
     )
 
+    parser.add_argument(
+        "-t",
+        "--test",
+        default=False,
+        type=bool,
+        help="Defines if it is test run",
+    )
+
     args = parser.parse_args()
 
-    with mlflow.start_run():
+    if not args.test:
+        with mlflow.start_run():
+            if args.nested_cv:
+                nested_cv(args)
+            else:
+                kfold_cv(args)
+    else:
         if args.nested_cv:
             nested_cv(args)
         else:
