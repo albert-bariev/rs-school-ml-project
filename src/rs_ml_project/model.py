@@ -153,8 +153,6 @@ def nested_cv(args: argparse.Namespace) -> None:
         p = key[7:]
         params[p] = value
 
-
-
     metrics["accuracy"] = np.mean(accuracy_lst)
     metrics["precision"] = np.mean(precision_lst)
     metrics["recall"] = np.mean(recall_lst)

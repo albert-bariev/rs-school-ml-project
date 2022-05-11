@@ -22,7 +22,9 @@ def train(argv: Optional[List[str]] = None) -> None:
         help="path to save the model",
     )
 
-    parser.add_argument("--target", type=str, help="Target column name")
+    parser.add_argument(
+        "--target", default="Cover_Type", type=str, help="Target column name"
+    )
 
     parser.add_argument(
         "-rs", "--random-state", default=13, type=int, help="random state"
@@ -145,7 +147,7 @@ def train(argv: Optional[List[str]] = None) -> None:
         help="Defines if it is test run",
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     if not args.test:
         with mlflow.start_run():
